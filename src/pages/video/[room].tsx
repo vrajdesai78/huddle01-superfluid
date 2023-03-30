@@ -302,16 +302,6 @@ const index = () => {
             <Icon as={BiMicrophone} />
           )}
         </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            send("START_SCREENSHARE");
-          }}
-          hidden={!state.matches("JoinedRoom")}
-        >
-          Screen Share
-        </Button>
       </Center>
     </>
   );

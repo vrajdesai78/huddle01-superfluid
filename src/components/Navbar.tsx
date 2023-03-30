@@ -32,30 +32,6 @@ export const NavBar = () => {
                 spacing={4}
                 display={{ base: "none", md: "flex" }}
               >
-                <chakra.a
-                  href="/"
-                  fontSize="sm"
-                  fontWeight={500}
-                  color={"gray.600"}
-                  _hover={{
-                    textDecoration: "none",
-                    color: "gray.800",
-                  }}
-                >
-                  Home
-                </chakra.a>
-                <chakra.a
-                  href="/profile"
-                  fontSize="sm"
-                  fontWeight={500}
-                  color={"gray.600"}
-                  _hover={{
-                    textDecoration: "none",
-                    color: "gray.800",
-                  }}
-                >
-                  Profile
-                </chakra.a>
               </HStack>
             </HStack>
             {/* if isConnected is true show address or show Connect wallet button */}

@@ -1,21 +1,17 @@
 import type { AppProps } from "next/app";
-import { ChakraProvider, extendTheme } from "@chakra-ui/react";
+import { ChakraProvider, extendTheme, type ThemeConfig } from "@chakra-ui/react";
 import { WagmiConfig } from "wagmi";
 import { client } from "../utils/wagmi";
-import { ConnectKitProvider } from "connectkit";
 import { NavBar } from "@/components/Navbar";
 
 function MyApp({ Component, pageProps }: AppProps) {
 
-  const colors = {
-    brand: {
-      900: "#1a365d",
-      800: "#153e75",
-      700: "#2a69ac",
-    },
+  const config: ThemeConfig = {
+    initialColorMode: "dark",
+    useSystemColorMode: false,
   };
 
-  const theme = extendTheme({ colors });
+  const theme = extendTheme({ config });
 
   return (
     <WagmiConfig client={client}>

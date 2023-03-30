@@ -108,7 +108,6 @@ export const socialLinkComponent = (
 };
 
 const User = () => {
-  const router = useRouter();
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [icon, setIcon] = useState("");
   const [name, setName] = useState("");
@@ -123,9 +122,9 @@ const User = () => {
   useEffect(() => {
     try {
       setUserName("vrajdesai78");
-      setIcon("https://i.imgur.com/8K8V5yP.png");
+      setIcon("https://bafybeife6tet3rmyd4aibhmeilzpmkmor5yaaqazzcqxe2yl3tmaay7yxe.ipfs.w3s.link/400x400.jpg");
       setName("Vraj Desai");
-      setBio("GitHub Campus Expert | Buildoor");
+      setBio("Web3 Buildooor 🚀");
       setMentorship(0.002);
       setResumeReview(0.003);
       setProjectGuidance(0.0025);
