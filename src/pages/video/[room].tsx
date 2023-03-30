@@ -181,12 +181,14 @@ const index = () => {
               state.context.consumers[consumerId].track?.kind === "video"
           )
           .map(
-            (consumerId) =>
+            (consumerId, index) =>
+              index != 0 && (
                 <Video
                   key={consumerId}
                   peerId={state.context.consumers[consumerId].peerId}
                   track={state.context.consumers[consumerId].track}
                 />
+              )
           )}
         {Object.keys(state.context.consumers)
           .filter(
