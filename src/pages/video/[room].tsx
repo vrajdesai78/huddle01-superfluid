@@ -1,15 +1,23 @@
-import { SimpleGrid, Box, Button } from "@chakra-ui/react";
+import { SimpleGrid, Center, Box, Button, Image, Icon } from "@chakra-ui/react";
 import { useEventListener } from "@huddle01/react";
 import { useHuddle01Web } from "@huddle01/react/hooks";
-import SendButton from "../components/SendButton";
-import Video from "../components/Video";
-import Audio from "../components/Audio";
+import Video from "@/components/Video";
+import Audio from "@/components/Audio";
 import React, { useEffect, useRef } from "react";
-import { NavBar } from "@/components/Navbar";
+import {
+  BiMicrophoneOff,
+  BiMicrophone,
+  BiCameraOff,
+  BiCamera,
+  BiPhoneOff,
+} from "react-icons/bi";
+import { useRouter } from "next/router";
 
 const index = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const roomId = useRouter().query.room as string;
 
   const { state, send } = useHuddle01Web();
 
@@ -18,7 +26,7 @@ const index = () => {
       videoRef.current.srcObject = state.context.camStream as MediaStream;
   });
 
-  useEventListener(state, "JoinedLobby.Mic.UnMuted", () => {
+  useEventListener(state, "JoinedLobby.Mic.Muted", () => {
     if (state.context.micStream && audioRef.current)
       audioRef.current.srcObject = state.context.micStream as MediaStream;
   });
@@ -29,13 +37,19 @@ const index = () => {
     }
   }, []);
 
+  const listOfImages = [
+    "https://i.imgur.com/GsWYjux.jpeg",
+    "https://i.imgur.com/GsWYjux.jpeg",
+    "https://i.imgur.com/GsWYjux.jpeg",
+  ];
+
   return (
     <>
       <SimpleGrid columns={2} spacing={10}>
-        <Box>
-          <video ref={videoRef} autoPlay muted></video>
+        <Center>
+          <video ref={videoRef} width={"100%"} autoPlay muted></video>
           <audio ref={audioRef} autoPlay></audio>
-        </Box>
+        </Center>
         {Object.keys(state.context.consumers)
           .filter(
             (consumerId) =>
@@ -43,13 +57,11 @@ const index = () => {
               state.context.consumers[consumerId].track?.kind === "video"
           )
           .map((consumerId) => (
-            <Box>
-              <Video
-                key={consumerId}
-                peerId={state.context.consumers[consumerId].peerId}
-                track={state.context.consumers[consumerId].track}
-              />
-            </Box>
+            <Video
+              key={consumerId}
+              peerId={state.context.consumers[consumerId].peerId}
+              track={state.context.consumers[consumerId].track}
+            />
           ))}
         {Object.keys(state.context.consumers)
           .filter(
@@ -58,38 +70,24 @@ const index = () => {
               state.context.consumers[consumerId].track?.kind === "audio"
           )
           .map((consumerId) => (
-            <Box>
-              <Audio
-                key={consumerId}
-                peerId={state.context.consumers[consumerId].peerId}
-                track={state.context.consumers[consumerId].track}
-              />
-            </Box>
+            <Audio
+              key={consumerId}
+              peerId={state.context.consumers[consumerId].peerId}
+              track={state.context.consumers[consumerId].track}
+            />
           ))}
       </SimpleGrid>
-      <Box>
+      <Center mt={5}>
         <Button
           margin={2}
           onClick={() => {
             state.matches("JoinedLobby")
               ? send("JOIN_ROOM")
-              : send({ type: "JOIN_LOBBY", roomId: "udn-payp-sry" });
+              : send({ type: "JOIN_LOBBY", roomId: roomId });
           }}
           hidden={state.matches("JoinedRoom")}
         >
           {state.matches("JoinedLobby") ? "Join Room" : "Join Lobby"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedLobby")
-              ? send("LEAVE_LOBBY")
-              : send("LEAVE_ROOM");
-          }}
-          hidden={!state.matches("JoinedLobby") && !state.matches("JoinedRoom")}
-        >
-          {state.matches("JoinedLobby") ? "Leave Lobby" : "Leave Room"}
         </Button>
 
         <Button
@@ -101,7 +99,11 @@ const index = () => {
           }}
           hidden={!state.matches("JoinedLobby")}
         >
-          {state.matches("JoinedLobby.Cam.On") ? "Disable Cam" : "Enable Cam"}
+          {state.matches("JoinedLobby.Cam.On") ? (
+            <Icon as={BiCameraOff} />
+          ) : (
+            <Icon as={BiCamera} />
+          )}
         </Button>
 
         <Button
@@ -113,9 +115,23 @@ const index = () => {
           }}
           hidden={!state.matches("JoinedLobby")}
         >
-          {state.matches("JoinedLobby.Mic.Unmuted")
-            ? "Disable Mic"
-            : "Enable Mic"}
+          {state.matches("JoinedLobby.Mic.Unmuted") ? (
+            <Icon as={BiMicrophoneOff} />
+          ) : (
+            <Icon as={BiMicrophone} />
+          )}
+        </Button>
+
+        <Button
+          margin={2}
+          onClick={() => {
+            state.matches("JoinedLobby")
+              ? send("LEAVE_LOBBY")
+              : send("LEAVE_ROOM");
+          }}
+          hidden={!state.matches("JoinedLobby") && !state.matches("JoinedRoom")}
+        >
+          <Icon as={BiPhoneOff} />
         </Button>
 
         <Button
@@ -127,9 +143,11 @@ const index = () => {
           }}
           hidden={!state.matches("JoinedRoom")}
         >
-          {state.matches("JoinedRoom.Cam.ProducingCam")
-            ? "Disable Cam"
-            : "Enable Cam"}
+          {state.matches("JoinedRoom.Cam.ProducingCam") ? (
+            <Icon as={BiCameraOff} />
+          ) : (
+            <Icon as={BiCamera} />
+          )}
         </Button>
 
         <Button
@@ -141,11 +159,23 @@ const index = () => {
           }}
           hidden={!state.matches("JoinedRoom")}
         >
-          {state.matches("JoinedRoom.Mic.ProducingMic")
-            ? "Disable Mic"
-            : "Enable Mic"}
+          {state.matches("JoinedRoom.Mic.ProducingMic") ? (
+            <Icon as={BiMicrophoneOff} />
+          ) : (
+            <Icon as={BiMicrophone} />
+          )}
         </Button>
-      </Box>
+
+        <Button
+          margin={2}
+          onClick={() => {
+            send("START_SCREENSHARE");
+          }}
+          hidden={!state.matches("JoinedRoom")}
+        >
+          Screen Share
+        </Button>
+      </Center>
     </>
   );
 };

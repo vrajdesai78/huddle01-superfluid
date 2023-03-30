@@ -3,6 +3,7 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { WagmiConfig } from "wagmi";
 import { client } from "../utils/wagmi";
 import { ConnectKitProvider } from "connectkit";
+import { NavBar } from "@/components/Navbar";
 
 function MyApp({ Component, pageProps }: AppProps) {
 
@@ -18,11 +19,10 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <WagmiConfig client={client}>
-      <ConnectKitProvider theme="retro">
         <ChakraProvider theme={theme}>
+          <NavBar/>
           <Component {...pageProps} />
         </ChakraProvider>
-      </ConnectKitProvider>
     </WagmiConfig>
   );
 }

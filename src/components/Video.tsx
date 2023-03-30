@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
-import { useHuddle01Web } from '@huddle01/react/hooks';
+import { useHuddle01Web } from "@huddle01/react/hooks";
+import { Center } from "@chakra-ui/react";
 
 const Video = ({
   peerId,
@@ -25,7 +26,7 @@ const Video = ({
     if (videoObj) {
       videoObj.srcObject = getStream(track);
       videoObj.onloadedmetadata = async () => {
-        console.warn('videoCard() | Metadata loaded...');
+        console.warn("videoCard() | Metadata loaded...");
         try {
           await videoObj.play();
         } catch (error) {
@@ -33,18 +34,15 @@ const Video = ({
         }
       };
       videoObj.onerror = () => {
-        console.error('videoCard() | Error is hapenning...');
+        console.error("videoCard() | Error is hapenning...");
       };
     }
   }, [state.context.consumers]);
 
-  console.log({ consumers: state.context });
-
   return (
-    <div>
-      {peerId}
-      <video ref={videoRef} autoPlay></video>
-    </div>
+    <Center>
+      <video ref={videoRef} width='100%' autoPlay></video>
+    </Center>
   );
 };
 
