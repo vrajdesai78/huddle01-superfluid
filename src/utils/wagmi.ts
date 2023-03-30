@@ -1,4 +1,3 @@
-import { getDefaultClient } from "connectkit";
 import { configureChains, createClient } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
 import { goerli, polygonMumbai } from "@wagmi/core/chains";
