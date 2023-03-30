@@ -3,7 +3,9 @@ import { useEventListener } from "@huddle01/react";
 import { useHuddle01Web } from "@huddle01/react/hooks";
 import Video from "@/components/Video";
 import Audio from "@/components/Audio";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Framework } from "@superfluid-finance/sdk-core";
+import { ethers } from "ethers";
 import {
   BiMicrophoneOff,
   BiMicrophone,
@@ -11,15 +13,38 @@ import {
   BiCamera,
   BiPhoneOff,
 } from "react-icons/bi";
+import { useAccount, useContractRead } from "wagmi";
 import { useRouter } from "next/router";
+import { contractAddress } from "src/utils/constants";
+import abi from "src/utils/abi.json";
 
 const index = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const roomId = useRouter().query.room as string;
+  const [senderAddress, setSenderAddress] = useState<string>("");
+  const [hostAddress, setHostAddress] = useState<string>("");
+  const [rate, setRate] = useState<string>("");
 
   const { state, send } = useHuddle01Web();
+
+  const { address } = useAccount();
+
+  const { data, isError, isLoading } = useContractRead({
+    address: contractAddress,
+    abi: abi,
+    functionName: "getRoomRate",
+    args: [roomId],
+  });
+
+  useEffect(() => {
+    if (data) {
+      setSenderAddress((data as any)[0]);
+      setHostAddress((data as any)[1]);
+      setRate((data as any)[2]);
+    }
+  }, [data]);
 
   useEventListener(state, "JoinedLobby.Cam.On", () => {
     if (state.context.camStream && videoRef.current)
@@ -37,11 +62,110 @@ const index = () => {
     }
   }, []);
 
-  const listOfImages = [
-    "https://i.imgur.com/GsWYjux.jpeg",
-    "https://i.imgur.com/GsWYjux.jpeg",
-    "https://i.imgur.com/GsWYjux.jpeg",
-  ];
+  async function createNewFlow(recipient: string, flowRate: string) {
+    const provider = new ethers.providers.Web3Provider(
+      (window as any).ethereum
+    );
+    await provider.send("eth_requestAccounts", []);
+
+    const signer = provider.getSigner();
+
+    const chainId = await (window as any).ethereum.request({
+      method: "eth_chainId",
+    });
+    const sf = await Framework.create({
+      chainId: Number(chainId),
+      provider: provider,
+    });
+
+    const superSigner = sf.createSigner({ signer: signer });
+
+    console.log(signer);
+    console.log(await superSigner.getAddress());
+    const daix = await sf.loadSuperToken("fDAIx");
+
+    console.log(daix);
+
+    try {
+      const createFlowOperation = daix.createFlow({
+        sender: await superSigner.getAddress(),
+        receiver: recipient,
+        flowRate: flowRate,
+      });
+
+      console.log(createFlowOperation);
+      console.log("Creating your stream...");
+
+      const result = await createFlowOperation.exec(superSigner);
+
+      if (result) {
+        console.log("Stream created!");
+        send("JOIN_ROOM");
+      }
+
+      console.log(
+        `Congrats - you've just created a money stream!
+      `
+      );
+    } catch (error) {
+      console.log(
+        "Hmmm, your transaction threw an error. Make sure that this stream does not already exist, and that you've entered a valid Ethereum address!"
+      );
+      console.error(error);
+    }
+  }
+
+  async function deleteExistingFlow(recipient: string) {
+    const provider = new ethers.providers.Web3Provider(
+      (window as any).ethereum
+    );
+    await provider.send("eth_requestAccounts", []);
+
+    const signer = provider.getSigner();
+
+    const chainId = await (window as any).ethereum.request({
+      method: "eth_chainId",
+    });
+    const sf = await Framework.create({
+      chainId: Number(chainId),
+      provider: provider,
+    });
+
+    const superSigner = sf.createSigner({ signer: signer });
+
+    console.log(signer);
+    console.log(await superSigner.getAddress());
+    const daix = await sf.loadSuperToken("fDAIx");
+
+    console.log(daix);
+
+    try {
+      const deleteFlowOperation = daix.deleteFlow({
+        sender: await signer.getAddress(),
+        receiver: recipient,
+        // userData?: string
+      });
+
+      console.log(deleteFlowOperation);
+      console.log("Deleting your stream...");
+
+      const result = await deleteFlowOperation.exec(superSigner);
+      if (result) {
+        send("LEAVE_ROOM");
+        location.reload();
+      }
+
+      console.log(
+        `Congrats - you've just updated a money stream!
+      `
+      );
+    } catch (error) {
+      console.log(
+        "Hmmm, your transaction threw an error. Make sure that this stream does not already exist, and that you've entered a valid Ethereum address!"
+      );
+      console.error(error);
+    }
+  }
 
   return (
     <>
@@ -56,13 +180,14 @@ const index = () => {
               state.context.consumers[consumerId] &&
               state.context.consumers[consumerId].track?.kind === "video"
           )
-          .map((consumerId) => (
-            <Video
-              key={consumerId}
-              peerId={state.context.consumers[consumerId].peerId}
-              track={state.context.consumers[consumerId].track}
-            />
-          ))}
+          .map(
+            (consumerId) =>
+                <Video
+                  key={consumerId}
+                  peerId={state.context.consumers[consumerId].peerId}
+                  track={state.context.consumers[consumerId].track}
+                />
+          )}
         {Object.keys(state.context.consumers)
           .filter(
             (consumerId) =>
@@ -81,9 +206,17 @@ const index = () => {
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedLobby")
-              ? send("JOIN_ROOM")
-              : send({ type: "JOIN_LOBBY", roomId: roomId });
+            if (state.matches("JoinedLobby")) {
+              if (address == senderAddress) {
+                createNewFlow(hostAddress, rate);
+              } else if (address == hostAddress) {
+                send("JOIN_ROOM");
+              } else {
+                alert("Sorry you are not allowed to join this room!");
+              }
+            } else {
+              send({ type: "JOIN_LOBBY", roomId: roomId });
+            }
           }}
           hidden={state.matches("JoinedRoom")}
         >
@@ -125,9 +258,11 @@ const index = () => {
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedLobby")
-              ? send("LEAVE_LOBBY")
-              : send("LEAVE_ROOM");
+            if (state.matches("JoinedRoom")) {
+              deleteExistingFlow(hostAddress);
+            } else {
+              send("LEAVE_LOBBY");
+            }
           }}
           hidden={!state.matches("JoinedLobby") && !state.matches("JoinedRoom")}
         >

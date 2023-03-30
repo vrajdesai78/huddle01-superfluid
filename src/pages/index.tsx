@@ -1,153 +1,223 @@
-import { SimpleGrid, Box, Button } from "@chakra-ui/react";
-import { useEventListener } from "@huddle01/react";
-import { useHuddle01Web } from "@huddle01/react/hooks";
-import SendButton from "../components/SendButton";
-import Video from "../components/Video";
-import Audio from "../components/Audio";
-import React, { useEffect, useRef } from "react";
-import { NavBar } from "@/components/Navbar";
+import { useRouter } from "next/router";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Heading,
+  Avatar,
+  Box,
+  Text,
+  Button,
+  Flex,
+  VStack,
+  HStack,
+  Icon,
+  useToast,
+  Input,
+} from "@chakra-ui/react";
+import { AiOutlineCalendar } from "react-icons/ai";
+import { IoSend } from "react-icons/io5";
+import { IconType } from "react-icons";
+import { Framework } from "@superfluid-finance/sdk-core";
+import { ethers } from "ethers";
+import { useAccount } from "wagmi";
+import { contractAddress } from "src/utils/constants";
+import abi from "src/utils/abi.json";
 
-const index = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+export const socialLinkComponent = (
+  service: string,
+  rate: Number,
+  icon: IconType,
+  address: string
+) => {
+  const [showCalender, setShowCalender] = useState(false);
+  const [dateTime, setDateTime] = useState("");
 
-  const { state, send } = useHuddle01Web();
+  const createRoom = (dateTime: string) => {
+    const dt = new Date(dateTime).toISOString().replace("Z", ".0051Z");
+    fetch("/api/createRoom", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "Vraj Desai",
+        startTime: dt,
+        hostWallets: [],
+      }),
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        const provider = new ethers.providers.Web3Provider(
+          (window as any).ethereum
+        );
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const contract = new ethers.Contract(contractAddress, abi, signer);
+        contract
+          .setRoomRate(data.roomId, address, "0x78D98C8DBD4e1BFEfe439f1bF89692FeDCa95C45", ethers.utils.parseEther(rate.toString()))
+          .then(() => {
+            console.log(data.roomId)
+            alert("Join room with this ID: " + data.roomId);
+          })
+          .catch((error: string) => {
+            console.log(error);
+          });
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
-  useEventListener(state, "JoinedLobby.Cam.On", () => {
-    if (state.context.camStream && videoRef.current)
-      videoRef.current.srcObject = state.context.camStream as MediaStream;
-  });
+  return (
+    <HStack spacing={2}>
+      <Box minW="xl">
+        <Button
+          minW={"50%"}
+          flex={1}
+          fontSize={"md"}
+          rounded={"full"}
+          onClick={() => {
+            setShowCalender(!showCalender);
+          }}
+        >
+          <Icon as={icon} />
+          <Text fontSize={"md"} textAlign={"center"} px={3}>
+            {`${service} ${rate} DAI/Sec`}
+          </Text>
+        </Button>
+        {showCalender && (
+          <>
+            <Input
+              placeholder="Select date and time"
+              type="datetime-local"
+              width={"51%"}
+              flex={1}
+              mt={5}
+              onChange={(e) => {
+                setDateTime(e.target.value);
+              }}
+            />
+            <Icon
+              as={IoSend}
+              ml={3}
+              onClick={async () => {
+                createRoom(dateTime);
+              }}
+            />
+          </>
+        )}
+      </Box>
+    </HStack>
+  );
+};
 
-  useEventListener(state, "JoinedLobby.Mic.UnMuted", () => {
-    if (state.context.micStream && audioRef.current)
-      audioRef.current.srcObject = state.context.micStream as MediaStream;
-  });
+const User = () => {
+  const router = useRouter();
+  const [userName, setUserName] = useState<string | undefined>(undefined);
+  const [icon, setIcon] = useState("");
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [mentorship, setMentorship] = useState(Number(0));
+  const [resumeReview, setResumeReview] = useState(Number(0));
+  const [projectGuidance, setProjectGuidance] = useState(Number(0));
+  const { address } = useAccount();
+
+  const toast = useToast();
 
   useEffect(() => {
-    if (state.matches("Idle")) {
-      send("INIT");
+    try {
+      setUserName("vrajdesai78");
+      setIcon("https://i.imgur.com/8K8V5yP.png");
+      setName("Vraj Desai");
+      setBio("GitHub Campus Expert | Buildoor");
+      setMentorship(0.002);
+      setResumeReview(0.003);
+      setProjectGuidance(0.0025);
+    } catch (error) {
+      console.error(error);
     }
   }, []);
 
   return (
-    <>
-      <SimpleGrid columns={2} spacing={10}>
-        <Box>
-          <video ref={videoRef} autoPlay muted></video>
-          <audio ref={audioRef} autoPlay></audio>
+    <Box
+      style={{
+        margin: 0,
+        padding: 0,
+        height: "100vh",
+        width: "100vw",
+        overflow: "hidden",
+      }}
+    >
+      <style jsx global>{`
+        html,
+        body {
+          height: 100%;
+          width: 100%;
+          overflow-x: hidden;
+          margin: 0;
+          padding: 0;
+        }
+      `}</style>
+
+      <Flex
+        py={6}
+        minW={"100vw"}
+        maxH={"100vh"}
+        p={30}
+        w="full"
+        alignItems="center"
+        justifyContent="center"
+        zIndex={1}
+        position="absolute"
+      >
+        <Box
+          maxW={"sm"}
+          w={"full"}
+          border="1px"
+          boxShadow={"2xl"}
+          rounded={"lg"}
+          p={6}
+          textAlign={"center"}
+        >
+          <Avatar
+            border={"2px"}
+            size={"2xl"}
+            src={icon}
+            mb={4}
+            pos={"relative"}
+          />
+          <Heading fontSize={"2xl"} fontFamily={"body"}>
+            {name}
+          </Heading>
+          <Text fontWeight={600} mb={4}>
+            @{userName}
+          </Text>
+          <Text textAlign={"center"} fontWeight="bold" px={3}>
+            {bio}
+          </Text>
+
+          {/* {Show social media links of user} */}
+
+          <VStack mt={8} direction={"row"} spacing={4}>
+            {socialLinkComponent(
+              "Mentorship",
+              mentorship,
+              AiOutlineCalendar,
+              address as string
+            )}
+            {socialLinkComponent(
+              "Resume Review",
+              resumeReview,
+              AiOutlineCalendar,
+              address as string
+            )}
+            {socialLinkComponent(
+              "Project Guidance",
+              projectGuidance,
+              AiOutlineCalendar,
+              address as string
+            )}
+          </VStack>
         </Box>
-        {Object.keys(state.context.consumers)
-          .filter(
-            (consumerId) =>
-              state.context.consumers[consumerId] &&
-              state.context.consumers[consumerId].track?.kind === "video"
-          )
-          .map((consumerId) => (
-            <Box>
-              <Video
-                key={consumerId}
-                peerId={state.context.consumers[consumerId].peerId}
-                track={state.context.consumers[consumerId].track}
-              />
-            </Box>
-          ))}
-        {Object.keys(state.context.consumers)
-          .filter(
-            (consumerId) =>
-              state.context.consumers[consumerId] &&
-              state.context.consumers[consumerId].track?.kind === "audio"
-          )
-          .map((consumerId) => (
-            <Box>
-              <Audio
-                key={consumerId}
-                peerId={state.context.consumers[consumerId].peerId}
-                track={state.context.consumers[consumerId].track}
-              />
-            </Box>
-          ))}
-      </SimpleGrid>
-      <Box>
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedLobby")
-              ? send("JOIN_ROOM")
-              : send({ type: "JOIN_LOBBY", roomId: "udn-payp-sry" });
-          }}
-          hidden={state.matches("JoinedRoom")}
-        >
-          {state.matches("JoinedLobby") ? "Join Room" : "Join Lobby"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedLobby")
-              ? send("LEAVE_LOBBY")
-              : send("LEAVE_ROOM");
-          }}
-          hidden={!state.matches("JoinedLobby") && !state.matches("JoinedRoom")}
-        >
-          {state.matches("JoinedLobby") ? "Leave Lobby" : "Leave Room"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedLobby.Cam.On")
-              ? send("DISABLE_CAM")
-              : send("ENABLE_CAM");
-          }}
-          hidden={!state.matches("JoinedLobby")}
-        >
-          {state.matches("JoinedLobby.Cam.On") ? "Disable Cam" : "Enable Cam"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedLobby.Mic.Unmuted")
-              ? send("DISABLE_MIC")
-              : send("ENABLE_MIC");
-          }}
-          hidden={!state.matches("JoinedLobby")}
-        >
-          {state.matches("JoinedLobby.Mic.Unmuted")
-            ? "Disable Mic"
-            : "Enable Mic"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedRoom.Cam.ProducingCam")
-              ? send("STOP_PRODUCING_CAM")
-              : send("PRODUCE_CAM");
-          }}
-          hidden={!state.matches("JoinedRoom")}
-        >
-          {state.matches("JoinedRoom.Cam.ProducingCam")
-            ? "Disable Cam"
-            : "Enable Cam"}
-        </Button>
-
-        <Button
-          margin={2}
-          onClick={() => {
-            state.matches("JoinedRoom.Mic.ProducingMic")
-              ? send("STOP_PRODUCING_MIC")
-              : send("PRODUCE_MIC");
-          }}
-          hidden={!state.matches("JoinedRoom")}
-        >
-          {state.matches("JoinedRoom.Mic.ProducingMic")
-            ? "Disable Mic"
-            : "Enable Mic"}
-        </Button>
-      </Box>
-    </>
+      </Flex>
+    </Box>
   );
 };
 
-export default index;
+export default User;
