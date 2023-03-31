@@ -261,7 +261,13 @@ const index = () => {
           margin={2}
           onClick={() => {
             if (state.matches("JoinedRoom")) {
-              deleteExistingFlow(hostAddress);
+              if (address == senderAddress) {
+                deleteExistingFlow(hostAddress);
+              } else if (address == hostAddress) {
+                send("LEAVE_ROOM");
+              } else {
+                alert("Sorry you are not allowed to join this room!");
+              }
             } else {
               send("LEAVE_LOBBY");
             }

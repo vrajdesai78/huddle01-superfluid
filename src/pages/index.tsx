@@ -1,5 +1,4 @@
-import { useRouter } from "next/router";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Heading,
   Avatar,
@@ -10,28 +9,37 @@ import {
   VStack,
   HStack,
   Icon,
-  useToast,
   Input,
 } from "@chakra-ui/react";
 import { AiOutlineCalendar } from "react-icons/ai";
 import { IoSend } from "react-icons/io5";
 import { IconType } from "react-icons";
-import { Framework } from "@superfluid-finance/sdk-core";
 import { ethers } from "ethers";
 import { useAccount } from "wagmi";
 import { contractAddress } from "src/utils/constants";
 import abi from "src/utils/abi.json";
+import userData from "src/utils/userData.json";
+import {
+  subscribeUser,
+  sendPushNotification,
+} from "src/utils/pushNotification";
 
 export const socialLinkComponent = (
   service: string,
   rate: Number,
   icon: IconType,
-  address: string
+  address: string,
+  name: string
 ) => {
   const [showCalender, setShowCalender] = useState(false);
   const [dateTime, setDateTime] = useState("");
 
-  const createRoom = (dateTime: string) => {
+  const { address: senderAddress } = useAccount();
+
+  const PK = process.env.NEXT_PUBLIC_PRIVATE_KEY as string;
+  const _signer = new ethers.Wallet(PK);
+
+  const createRoom = (dateTime: string, name: string, service: string) => {
     const dt = new Date(dateTime).toISOString().replace("Z", ".0051Z");
     fetch("/api/createRoom", {
       method: "POST",
@@ -50,10 +58,30 @@ export const socialLinkComponent = (
         const signer = provider.getSigner();
         const contract = new ethers.Contract(contractAddress, abi, signer);
         contract
-          .setRoomRate(data.roomId, address, "0x78D98C8DBD4e1BFEfe439f1bF89692FeDCa95C45", ethers.utils.parseEther(rate.toString()))
-          .then(() => {
-            console.log(data.roomId)
-            alert("Join room with this ID: " + data.roomId);
+          .setRoomRate(
+            data.roomId,
+            senderAddress,
+            address,
+            ethers.utils.parseEther(rate.toString())
+          )
+          .then(async (tx: string) => {
+            if (tx) {
+              await subscribeUser(senderAddress as string);
+              await sendPushNotification(
+                data.roomId,
+                senderAddress as string,
+                name,
+                service,
+                false
+              );
+              await sendPushNotification(
+                data.roomId,
+                address,
+                name,
+                service,
+                true
+              );
+            }
           })
           .catch((error: string) => {
             console.log(error);
@@ -93,13 +121,14 @@ export const socialLinkComponent = (
                 setDateTime(e.target.value);
               }}
             />
-            <Icon
-              as={IoSend}
+            <Button
               ml={3}
               onClick={async () => {
-                createRoom(dateTime);
+                createRoom(dateTime, name, service);
               }}
-            />
+            >
+              <Icon as={IoSend} />
+            </Button>
           </>
         )}
       </Box>
@@ -115,19 +144,18 @@ const User = () => {
   const [mentorship, setMentorship] = useState(Number(0));
   const [resumeReview, setResumeReview] = useState(Number(0));
   const [projectGuidance, setProjectGuidance] = useState(Number(0));
-  const { address } = useAccount();
-
-  const toast = useToast();
+  const [walletAddress, setWalletAddress] = useState("");
 
   useEffect(() => {
     try {
-      setUserName("vrajdesai78");
-      setIcon("https://bafybeife6tet3rmyd4aibhmeilzpmkmor5yaaqazzcqxe2yl3tmaay7yxe.ipfs.w3s.link/400x400.jpg");
-      setName("Vraj Desai");
-      setBio("Web3 Buildooor 🚀");
-      setMentorship(0.002);
-      setResumeReview(0.003);
-      setProjectGuidance(0.0025);
+      setUserName(userData.userName);
+      setIcon(userData.profileUrl);
+      setName(userData.name);
+      setBio(userData.bio);
+      setMentorship(userData.mentorshipRate);
+      setResumeReview(userData.resumeReviewRate);
+      setProjectGuidance(userData.projectGuidanceRate);
+      setWalletAddress(userData.walletAddress);
     } catch (error) {
       console.error(error);
     }
@@ -191,26 +219,27 @@ const User = () => {
             {bio}
           </Text>
 
-          {/* {Show social media links of user} */}
-
           <VStack mt={8} direction={"row"} spacing={4}>
             {socialLinkComponent(
               "Mentorship",
               mentorship,
               AiOutlineCalendar,
-              address as string
+              walletAddress,
+              name
             )}
             {socialLinkComponent(
               "Resume Review",
               resumeReview,
               AiOutlineCalendar,
-              address as string
+              walletAddress,
+              name
             )}
             {socialLinkComponent(
               "Project Guidance",
               projectGuidance,
               AiOutlineCalendar,
-              address as string
+              walletAddress,
+              name
             )}
           </VStack>
         </Box>
