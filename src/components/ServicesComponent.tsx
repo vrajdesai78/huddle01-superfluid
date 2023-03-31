@@ -35,7 +35,7 @@ export const ServicesComponent = (
     fetch("/api/createRoom", {
       method: "POST",
       body: JSON.stringify({
-        name: "Vraj Desai",
+        name: name,
         startTime: dt,
         hostWallets: [],
       }),
