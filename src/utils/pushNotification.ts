@@ -28,8 +28,8 @@ export const subscribeUser = async (address: string) => {
         },
         payload: {
           title: `${isMentor ? `Someone has scheduled a call with you for ${service}` : `Your ${service} call with ${name} is scheduled`}`,
-          body: `You can join the call with this link: https://pro-mate.vercel.app/${roomId}`,
-          cta: `https://pro-mate.vercel.app/${roomId}`,
+          body: `You can join the call with this link: https://pro-mate.vercel.app/video/${roomId}`,
+          cta: `https://pro-mate.vercel.app/video/${roomId}`,
           img: "",
         },
         recipients: `eip155:5:${address}`, // recipient address
