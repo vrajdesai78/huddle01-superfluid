@@ -13,7 +13,7 @@ export default function handler(
     }),
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": "Lgiukg7CvVMxgdlMRUnOGoWqzRmBv85i",
+      "x-api-key": process.env.HUDDLE01_API_KEY as string,
     },
   }).then((response) => {
     response.json().then((data) => {

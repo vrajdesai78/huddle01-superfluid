@@ -1,11 +1,8 @@
 import { SimpleGrid, Center, Box, Button, Image, Icon } from "@chakra-ui/react";
 import { useEventListener } from "@huddle01/react";
-import { useHuddle01Web } from "@huddle01/react/hooks";
 import Video from "@/components/Video";
 import Audio from "@/components/Audio";
 import React, { useEffect, useRef, useState } from "react";
-import { Framework } from "@superfluid-finance/sdk-core";
-import { ethers } from "ethers";
 import {
   BiMicrophoneOff,
   BiMicrophone,
@@ -16,7 +13,9 @@ import {
 import { useAccount, useContractRead } from "wagmi";
 import { useRouter } from "next/router";
 import { contractAddress } from "src/utils/constants";
+import { createNewFlow, deleteExistingFlow } from "src/utils/superfluid";
 import abi from "src/utils/abi.json";
+import { useHuddle01Web } from "@huddle01/react/hooks";
 
 const index = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,7 +30,7 @@ const index = () => {
 
   const { address } = useAccount();
 
-  const { data, isError, isLoading } = useContractRead({
+  const { data } = useContractRead({
     address: contractAddress,
     abi: abi,
     functionName: "getRoomRate",
@@ -61,111 +60,6 @@ const index = () => {
       send("INIT");
     }
   }, []);
-
-  async function createNewFlow(recipient: string, flowRate: string) {
-    const provider = new ethers.providers.Web3Provider(
-      (window as any).ethereum
-    );
-    await provider.send("eth_requestAccounts", []);
-
-    const signer = provider.getSigner();
-
-    const chainId = await (window as any).ethereum.request({
-      method: "eth_chainId",
-    });
-    const sf = await Framework.create({
-      chainId: Number(chainId),
-      provider: provider,
-    });
-
-    const superSigner = sf.createSigner({ signer: signer });
-
-    console.log(signer);
-    console.log(await superSigner.getAddress());
-    const daix = await sf.loadSuperToken("fDAIx");
-
-    console.log(daix);
-
-    try {
-      const createFlowOperation = daix.createFlow({
-        sender: await superSigner.getAddress(),
-        receiver: recipient,
-        flowRate: flowRate,
-      });
-
-      console.log(createFlowOperation);
-      console.log("Creating your stream...");
-
-      const result = await createFlowOperation.exec(superSigner);
-
-      if (result) {
-        console.log("Stream created!");
-        send("JOIN_ROOM");
-      }
-
-      console.log(
-        `Congrats - you've just created a money stream!
-      `
-      );
-    } catch (error) {
-      console.log(
-        "Hmmm, your transaction threw an error. Make sure that this stream does not already exist, and that you've entered a valid Ethereum address!"
-      );
-      console.error(error);
-    }
-  }
-
-  async function deleteExistingFlow(recipient: string) {
-    const provider = new ethers.providers.Web3Provider(
-      (window as any).ethereum
-    );
-    await provider.send("eth_requestAccounts", []);
-
-    const signer = provider.getSigner();
-
-    const chainId = await (window as any).ethereum.request({
-      method: "eth_chainId",
-    });
-    const sf = await Framework.create({
-      chainId: Number(chainId),
-      provider: provider,
-    });
-
-    const superSigner = sf.createSigner({ signer: signer });
-
-    console.log(signer);
-    console.log(await superSigner.getAddress());
-    const daix = await sf.loadSuperToken("fDAIx");
-
-    console.log(daix);
-
-    try {
-      const deleteFlowOperation = daix.deleteFlow({
-        sender: await signer.getAddress(),
-        receiver: recipient,
-        // userData?: string
-      });
-
-      console.log(deleteFlowOperation);
-      console.log("Deleting your stream...");
-
-      const result = await deleteFlowOperation.exec(superSigner);
-      if (result) {
-        send("LEAVE_ROOM");
-        location.reload();
-      }
-
-      console.log(
-        `Congrats - you've just updated a money stream!
-      `
-      );
-    } catch (error) {
-      console.log(
-        "Hmmm, your transaction threw an error. Make sure that this stream does not already exist, and that you've entered a valid Ethereum address!"
-      );
-      console.error(error);
-    }
-  }
 
   return (
     <>
@@ -207,10 +101,13 @@ const index = () => {
       <Center mt={5}>
         <Button
           margin={2}
-          onClick={() => {
+          onClick={async () => {
             if (state.matches("JoinedLobby")) {
               if (address == senderAddress) {
-                createNewFlow(hostAddress, rate);
+                const isCompleted = await createNewFlow(hostAddress, rate);
+                if (isCompleted) {
+                  send("JOIN_ROOM");
+                }
               } else if (address == hostAddress) {
                 send("JOIN_ROOM");
               } else {
@@ -259,9 +156,19 @@ const index = () => {
 
         <Button
           margin={2}
-          onClick={() => {
+          onClick={async () => {
             if (state.matches("JoinedRoom")) {
-              deleteExistingFlow(hostAddress);
+              if (address == senderAddress) {
+                const isDeleted = await deleteExistingFlow(hostAddress);
+                if (isDeleted) {
+                  send("LEAVE_ROOM");
+                  location.reload();
+                }
+              } else if (address == hostAddress) {
+                send("LEAVE_ROOM");
+              } else {
+                alert("Sorry you are not allowed to join this room!");
+              }
             } else {
               send("LEAVE_LOBBY");
             }

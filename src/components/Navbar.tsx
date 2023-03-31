@@ -2,6 +2,8 @@ import { Button, chakra, Flex, HStack } from "@chakra-ui/react";
 import React, { useState, useEffect } from "react";
 import { InjectedConnector } from "wagmi/connectors/injected";
 import { useConnect, useAccount } from "wagmi";
+import Image from "next/image";
+import { useRouter } from "next/router";
 
 export const NavBar = () => {
   const { connect } = useConnect({
@@ -26,12 +28,15 @@ export const NavBar = () => {
         >
           <Flex alignItems="center" justifyContent="space-between" mx="auto">
             {/* Align connect wallet button on right side */}
-            <HStack spacing={8} alignItems="center">
+            <HStack alignItems="center">
               <HStack
                 as="nav"
                 spacing={4}
                 display={{ base: "none", md: "flex" }}
               >
+                <a target="_blank" href="https://huddle01.com">
+                <Image src="/logo.svg" alt="logo" width={100} height={100} />
+                </a>
               </HStack>
             </HStack>
             {/* if isConnected is true show address or show Connect wallet button */}
