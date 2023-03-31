@@ -24,12 +24,12 @@ export const subscribeUser = async (address: string) => {
         identityType: PushAPI.payloads.IDENTITY_TYPE.DIRECT_PAYLOAD, // direct payload
         notification: {
           title: `${isMentor ? `Someone has scheduled a call with you for ${service}` : `Your ${service} call with ${name} is scheduled`}`,
-          body: `You can join the call with this link: https://huddle01-superfluid.vercel.app/video/${roomId}`,
+          body: `You can join the call with this link: https://pro-mate.vercel.app/${roomId}`,
         },
         payload: {
           title: `${isMentor ? `Someone has scheduled a call with you for ${service}` : `Your ${service} call with ${name} is scheduled`}`,
-          body: `You can join the call with this link: https://huddle01-superfluid.vercel.app/video/${roomId}`,
-          cta: `https://huddle01-superfluid.vercel.app/video/${roomId}`,
+          body: `You can join the call with this link: https://pro-mate.vercel.app/${roomId}`,
+          cta: `https://pro-mate.vercel.app/${roomId}`,
           img: "",
         },
         recipients: `eip155:5:${address}`, // recipient address
