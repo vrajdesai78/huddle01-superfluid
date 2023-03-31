@@ -7,14 +7,14 @@ Schedule a meetl with your favorite the mentor and pay crypto per second in (fDA
 1. Visit the [Home](https://pro-mate.vercel.app/) page and connect your wallet and switch to polygon mumbai. 
 2. Click on any service like Mentorship and select date and time. 
 3. Install push protocol’s [web extension](https://chrome.google.com/webstore/detail/push-staging-protocol-alp/bjiennpmhdcandkpigcploafccldlakj) to receive notifications. 
-3. Make sure you have enough matic in mumbai testnet, if you don’t have get it from [here](https://mumbaifaucet.com/). 
-4. Click send icon to schedule a call on selected date and time. Sign a transaction to complete the booking. 
-5. Once you complete your transaction, go to push protocol’s extension and check your spam to get the link to join huddle01’s call. 
-6. You can join the call by navigating to `https://pro-mate.vercel.app/video/[roomid]`
-7. To join make sure you have same connected wallet, which you used while scheduling your call. Click on Join Lobby, then turn on your camera and mic. 
-8. Make sure you have fDAIx in your wallet, to claim it in your wallet navigate to [claim token page](https://pro-mate.vercel.app/claim) and click on `Click to get 100k fDAIx` button. 
-9. After claiming fDAIx, you can click on Join room and sign a transaction which will start a money streaming using Superfluid. 
-10. To end the call, click on call end button and sign a transaction which delete money streaming from superfluid. 
+4. Make sure you have enough matic in mumbai testnet, if you don’t have get it from [here](https://mumbaifaucet.com/). 
+5. Click send icon to schedule a call on selected date and time. Sign a transaction to complete the booking. 
+6. Once you complete your transaction, go to push protocol’s extension and check your spam to get the link to join huddle01’s call. 
+7. You can join the call by navigating to `https://pro-mate.vercel.app/video/[roomid]`
+8. To join make sure you have same connected wallet, which you used while scheduling your call. Click on Join Lobby, then turn on your camera and mic. 
+9. Make sure you have fDAIx in your wallet, to claim it in your wallet navigate to [claim token page](https://pro-mate.vercel.app/claim) and click on `Click to get 100k fDAIx` button. 
+10. After claiming fDAIx, you can click on Join room and sign a transaction which will start a money streaming using Superfluid. 
+11. To end the call, click on call end button and sign a transaction which delete money streaming from superfluid. 
 
 ## How to work with this project
 
