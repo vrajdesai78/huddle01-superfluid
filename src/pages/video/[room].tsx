@@ -1,5 +1,5 @@
 import { SimpleGrid, Center, Box, Button, Image, Icon } from "@chakra-ui/react";
-import { useEventListener } from "@huddle01/react";
+import { useEventListener, useHuddle01 } from "@huddle01/react";
 import Video from "@/components/Video";
 import Audio from "@/components/Audio";
 import React, { useEffect, useRef, useState } from "react";
@@ -15,7 +15,14 @@ import { useRouter } from "next/router";
 import { contractAddress } from "src/utils/constants";
 import { createNewFlow, deleteExistingFlow } from "src/utils/superfluid";
 import abi from "src/utils/abi.json";
-import { useHuddle01Web } from "@huddle01/react/hooks";
+import {
+  useAudio,
+  useVideo,
+  useLobby,
+  useMeetingMachine,
+  usePeers,
+  useRoom,
+} from "@huddle01/react/hooks";
 
 const index = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -26,9 +33,31 @@ const index = () => {
   const [hostAddress, setHostAddress] = useState<string>("");
   const [rate, setRate] = useState<string>("");
 
-  const { state, send } = useHuddle01Web();
+  const { state, send } = useMeetingMachine();
 
   const { address } = useAccount();
+
+  const { initialize, isInitialized } = useHuddle01();
+  const { joinLobby, isLobbyJoined, leaveLobby } = useLobby();
+  const {
+    fetchAudioStream,
+    produceAudio,
+    isProducing: isAudioProducing,
+    stopAudioStream,
+    stopProducingAudio,
+    stream: micStream,
+  } = useAudio();
+  const {
+    fetchVideoStream,
+    produceVideo,
+    isProducing: isVideoProducing,
+    stopVideoStream,
+    stopProducingVideo,
+    stream: camStream,
+  } = useVideo();
+  const { joinRoom, leaveRoom, isRoomJoined } = useRoom();
+
+  const { peers } = usePeers();
 
   const { data } = useContractRead({
     address: contractAddress,
@@ -45,19 +74,19 @@ const index = () => {
     }
   }, [data]);
 
-  useEventListener(state, "JoinedLobby.Cam.On", () => {
+  useEventListener("lobby:cam-on", () => {
     if (state.context.camStream && videoRef.current)
       videoRef.current.srcObject = state.context.camStream as MediaStream;
   });
 
-  useEventListener(state, "JoinedLobby.Mic.Muted", () => {
+  useEventListener("lobby:mic-on", () => {
     if (state.context.micStream && audioRef.current)
       audioRef.current.srcObject = state.context.micStream as MediaStream;
   });
 
   useEffect(() => {
     if (state.matches("Idle")) {
-      send("INIT");
+      initialize("KL1r3E1yHfcrRbXsT4mcE-3mK60Yc3YR");
     }
   }, []);
 
@@ -68,33 +97,20 @@ const index = () => {
           <video ref={videoRef} width={"100%"} autoPlay muted></video>
           <audio ref={audioRef} autoPlay></audio>
         </Center>
-        {Object.keys(state.context.consumers)
+        {Object.values(peers)
+          .filter((peer) => peer.cam)
+          .map((peer) => (
+            <Video key={peer.peerId} peerId={peer.peerId} track={peer.cam} />
+          ))}
+        {Object.values(peers)
           .filter(
-            (consumerId) =>
-              state.context.consumers[consumerId] &&
-              state.context.consumers[consumerId].track?.kind === "video"
+            (peer) => peer.mic
           )
-          .map(
-            (consumerId, index) =>
-              index != 0 && (
-                <Video
-                  key={consumerId}
-                  peerId={state.context.consumers[consumerId].peerId}
-                  track={state.context.consumers[consumerId].track}
-                />
-              )
-          )}
-        {Object.keys(state.context.consumers)
-          .filter(
-            (consumerId) =>
-              state.context.consumers[consumerId] &&
-              state.context.consumers[consumerId].track?.kind === "audio"
-          )
-          .map((consumerId) => (
+          .map((peer) => (
             <Audio
-              key={consumerId}
-              peerId={state.context.consumers[consumerId].peerId}
-              track={state.context.consumers[consumerId].track}
+              key={peer.peerId}
+              peerId={peer.peerId}
+              track={peer.mic}
             />
           ))}
       </SimpleGrid>
@@ -102,36 +118,36 @@ const index = () => {
         <Button
           margin={2}
           onClick={async () => {
-            if (state.matches("JoinedLobby")) {
+            if (isLobbyJoined) {
               if (address == senderAddress) {
                 const isCompleted = await createNewFlow(hostAddress, rate);
                 if (isCompleted) {
-                  send("JOIN_ROOM");
+                  joinRoom();
                 }
               } else if (address == hostAddress) {
-                send("JOIN_ROOM");
+                joinRoom();
               } else {
                 alert("Sorry you are not allowed to join this room!");
               }
             } else {
-              send({ type: "JOIN_LOBBY", roomId: roomId });
+              joinLobby(roomId);
             }
           }}
-          hidden={state.matches("JoinedRoom")}
+          hidden={isRoomJoined}
         >
-          {state.matches("JoinedLobby") ? "Join Room" : "Join Lobby"}
+          {isLobbyJoined ? "Join Room" : "Join Lobby"}
         </Button>
 
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedLobby.Cam.On")
-              ? send("DISABLE_CAM")
-              : send("ENABLE_CAM");
+            state.matches("Initialized.JoinedLobby.Cam.On")
+              ? stopVideoStream()
+              : fetchVideoStream()
           }}
-          hidden={!state.matches("JoinedLobby")}
+          hidden={!isLobbyJoined}
         >
-          {state.matches("JoinedLobby.Cam.On") ? (
+          {state.matches("Initialized.JoinedLobby.Cam.On") ? (
             <Icon as={BiCameraOff} />
           ) : (
             <Icon as={BiCamera} />
@@ -141,13 +157,13 @@ const index = () => {
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedLobby.Mic.Unmuted")
-              ? send("DISABLE_MIC")
-              : send("ENABLE_MIC");
+            state.matches("Initialized.JoinedLobby.Mic.Unmuted")
+              ? stopAudioStream()
+              : fetchAudioStream()
           }}
-          hidden={!state.matches("JoinedLobby")}
+          hidden={!isLobbyJoined}
         >
-          {state.matches("JoinedLobby.Mic.Unmuted") ? (
+          {state.matches("Initialized.JoinedLobby.Mic.Unmuted") ? (
             <Icon as={BiMicrophoneOff} />
           ) : (
             <Icon as={BiMicrophone} />
@@ -157,23 +173,23 @@ const index = () => {
         <Button
           margin={2}
           onClick={async () => {
-            if (state.matches("JoinedRoom")) {
+            if (isRoomJoined) {
               if (address == senderAddress) {
                 const isDeleted = await deleteExistingFlow(hostAddress);
                 if (isDeleted) {
-                  send("LEAVE_ROOM");
+                  leaveRoom();
                   location.reload();
                 }
               } else if (address == hostAddress) {
-                send("LEAVE_ROOM");
+                leaveRoom();
               } else {
                 alert("Sorry you are not allowed to join this room!");
               }
             } else {
-              send("LEAVE_LOBBY");
+              leaveLobby();
             }
           }}
-          hidden={!state.matches("JoinedLobby") && !state.matches("JoinedRoom")}
+          hidden={!isLobbyJoined && !isRoomJoined}
         >
           <Icon as={BiPhoneOff} />
         </Button>
@@ -181,13 +197,13 @@ const index = () => {
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedRoom.Cam.ProducingCam")
-              ? send("STOP_PRODUCING_CAM")
-              : send("PRODUCE_CAM");
+            state.matches("Initialized.JoinedRoom.Cam.ProducingCam")
+              ? stopProducingVideo()
+              : produceVideo(camStream)
           }}
-          hidden={!state.matches("JoinedRoom")}
+          hidden={!isRoomJoined}
         >
-          {state.matches("JoinedRoom.Cam.ProducingCam") ? (
+          {isVideoProducing ? (
             <Icon as={BiCameraOff} />
           ) : (
             <Icon as={BiCamera} />
@@ -197,13 +213,11 @@ const index = () => {
         <Button
           margin={2}
           onClick={() => {
-            state.matches("JoinedRoom.Mic.ProducingMic")
-              ? send("STOP_PRODUCING_MIC")
-              : send("PRODUCE_MIC");
+            isAudioProducing ? stopProducingAudio() : produceAudio(micStream);
           }}
-          hidden={!state.matches("JoinedRoom")}
+          hidden={!isRoomJoined}
         >
-          {state.matches("JoinedRoom.Mic.ProducingMic") ? (
+          {isAudioProducing ? (
             <Icon as={BiMicrophoneOff} />
           ) : (
             <Icon as={BiMicrophone} />

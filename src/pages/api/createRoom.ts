@@ -4,7 +4,7 @@ export default function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  fetch("https://us-central1-nfts-apis.cloudfunctions.net/createroom", {
+  fetch("https://iriko.testing.huddle01.com/api/v1/create-room", {
     method: "POST",
     body: JSON.stringify({
       title: `Meeting with ${req.body.name}`,

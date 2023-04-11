@@ -10,7 +10,7 @@
     "@chakra-ui/react": "^2.5.4",
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
-    "@huddle01/react": "^0.0.1",
+    "@huddle01/react": "^0.0.6",
     "@pushprotocol/restapi": "^1.0.0",
     "@superfluid-finance/sdk-core": "^0.6.3",
     "@web3-react/core": "^6.1.9",

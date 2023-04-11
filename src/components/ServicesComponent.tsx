@@ -50,7 +50,7 @@ export const ServicesComponent = (
         const contract = new ethers.Contract(contractAddress, abi, signer);
         contract
           .setRoomRate(
-            data.roomId,
+            data.data.roomId,
             senderAddress,
             address,
             ethers.utils.parseEther(rate.toString())
@@ -59,14 +59,14 @@ export const ServicesComponent = (
             if (tx) {
               await subscribeUser(senderAddress as string);
               await sendPushNotification(
-                data.roomId,
+                data.data.roomId,
                 senderAddress as string,
                 name,
                 service,
                 false
               );
               await sendPushNotification(
-                data.roomId,
+                data.data.roomId,
                 address,
                 name,
                 service,
