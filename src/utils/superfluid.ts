@@ -1,6 +1,5 @@
 import { ethers } from "ethers";
 import { Framework } from "@superfluid-finance/sdk-core";
-import { useHuddle01Web } from "@huddle01/react/hooks";
 
 export const createNewFlow = async (recipient: string, flowRate: string) => {
       
